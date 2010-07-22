@@ -118,34 +118,29 @@ sub _instance_is_inlinable {
     return $self->associated_attribute->associated_class->instance_metaclass->is_inlinable;
 }
 
-sub _generate_reader_method {
-    my $self = shift;
-    $self->_instance_is_inlinable ? $self->_generate_reader_method_inline(@_)
-                                  : $self->SUPER::_generate_reader_method(@_);
-}
+# this may seem funny, but we need to have something in here that traits can
+# attach to / modify, when they want to modify how a non-inlinable attribute's
+# accessors work.
 
-sub _generate_writer_method {
-    my $self = shift;
-    $self->_instance_is_inlinable ? $self->_generate_writer_method_inline(@_)
-                                  : $self->SUPER::_generate_writer_method(@_);
-}
+sub _generate_reader_method_not_inline    { shift->SUPER::_generate_reader_method(@_)    }
+sub _generate_writer_method_not_inline    { shift->SUPER::_generate_writer_method(@_)    }
+sub _generate_accessor_method_not_inline  { shift->SUPER::_generate_accessor_method(@_)  }
+sub _generate_predicate_method_not_inline { shift->SUPER::_generate_predicate_method(@_) }
+sub _generate_clearer_method_not_inline   { shift->SUPER::_generate_clearer_method(@_)   }
 
-sub _generate_accessor_method {
-    my $self = shift;
-    $self->_instance_is_inlinable ? $self->_generate_accessor_method_inline(@_)
-                                  : $self->SUPER::_generate_accessor_method(@_);
-}
+sub _generate_reader_method    { shift->__pick(qw{_generate_reader_method_inline _generate_reader_method_not_inline}, @_) }
+sub _generate_writer_method    { shift->__pick(qw{_generate_writer_method_inline _generate_writer_method_not_inline}, @_) }
+sub _generate_accessor_method  { shift->__pick(qw{_generate_accessor_method_inline _generate_accessor_method_not_inline}, @_) }
+sub _generate_predicate_method { shift->__pick(qw{_generate_predicate_method_inline _generate_predicate_method_not_inline}, @_) }
+sub _generate_clearer_method   { shift->__pick(qw{_generate_clearer_method_inline _generate_clearer_method_not_inline}, @_) }
 
-sub _generate_predicate_method {
-    my $self = shift;
-    $self->_instance_is_inlinable ? $self->_generate_predicate_method_inline(@_)
-                                  : $self->SUPER::_generate_predicate_method(@_);
-}
+sub __pick {
+    my ($self, $inline, $not_inline) = (shift, shift, shift);
 
-sub _generate_clearer_method {
-    my $self = shift;
-    $self->_instance_is_inlinable ? $self->_generate_clearer_method_inline(@_)
-                                  : $self->SUPER::_generate_clearer_method(@_);
+    $self->_instance_is_inlinable
+        ? $self->$inline(@_)
+        : $self->$not_inline(@_)
+        ;
 }
 
 sub _inline_pre_body  { '' }
