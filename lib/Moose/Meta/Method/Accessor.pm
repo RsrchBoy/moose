@@ -103,6 +103,24 @@ sub _generate_reader_method_inline {
     . '}');
 }
 
+sub _generate_clearer_method_inline {
+    my $self          = $_[0];
+    my $attr          = $self->associated_attribute;
+    my $attr_name     = $attr->name;
+    my $mi = $attr->associated_class->instance_metaclass;
+
+    # handle the multiple slot case by default
+    my @deinit = map { $mi->inline_deinitialize_slot('$_[0]', $_) } $attr->slots;
+
+    return $self->_eval_code(
+        'sub {'
+        . $self->_inline_pre_body(@_)
+        . join('; ', @deinit)
+        . $self->_inline_post_body(@_)
+        . '}'
+    );
+}
+
 sub _inline_copy_value {
     return '' unless shift->_value_needs_copy;
     return 'my $val = $_[1];'
