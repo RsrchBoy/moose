@@ -720,6 +720,13 @@ Class::MOP::Instance->meta->add_attribute(
 # need to replace the meta method there with a real meta method object
 Class::MOP::Object->meta->_add_meta_method('meta');
 
+Class::MOP::Object->meta->add_attribute(
+    Class::MOP::Attribute->new('definition_context' => (
+        reader => { 'definition_context' => \&Class::MOP::Object::definition_context },
+        _definition_context(),
+    ))
+);
+
 ## --------------------------------------------------------
 ## Class::MOP::Mixin
 
